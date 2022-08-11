@@ -28,6 +28,11 @@ jobs:
           path: bin/
           key: build-${{ hashFiles('package.json') }}
 
+      - name: hash
+        run: |
+          echo "pack: ${{ hashFiles('package.json') }}"
+          echo "ts: ${{ hashFiles('**/.ts') }}"
+
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
