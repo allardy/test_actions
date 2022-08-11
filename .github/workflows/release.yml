@@ -22,11 +22,17 @@ jobs:
         with:
           cache: 'yarn'
 
+      - name: get-npm-version
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@main
+        with:
+          path: ./package.json
+
       - uses: actions/cache@v3
         id: cache
         with:
           path: bin/
-          key: ${{ runner.os }}-v1-${{ hashFiles('**/yarn.lock') }}
+          key: v${{ steps.package-version.outputs.current-version}}-${{ hashFiles('**/yarn.lock') }}
 
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
