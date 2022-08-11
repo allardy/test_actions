@@ -22,31 +22,11 @@ jobs:
         with:
           cache: 'yarn'
 
-      - uses: bbonkr/get-version-action@v1.0.4
-        id: get_version
-        with:
-          project: './package.json'
-
-      - run: echo "Version=${{ steps.get_version.outputs.version }}"
-
-      - id: get_version2
-        uses: battila7/get-version-action@v2
-
-      - run: echo ${{ steps.get_version2.outputs.version }}
-
-      - run: echo ${{ steps.get_version2.outputs.version-without-v }}
-
-      - name: get-npm-version
-        id: package-version
-        uses: martinbeentjes/npm-get-version-action@main
-        with:
-          path: ./package.json
-
       - uses: actions/cache@v3
         id: cache
         with:
           path: bin/
-          key: v${{ steps.package-version.outputs.current-version}}-${{ hashFiles('**/yarn.lock') }}
+          key: build-${{ hashFiles('package.json) }}
 
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
