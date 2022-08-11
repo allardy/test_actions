@@ -22,12 +22,19 @@ jobs:
         with:
           cache: 'yarn'
 
-      - id: get_version
+      - uses: bbonkr/get-version-action@v1.0.4
+          id: get_version
+          with:
+            project: "./package.json"
+
+      - run: echo "Version=${{ steps.get_version.outputs.version }}"
+
+      - id: get_version2
         uses: battila7/get-version-action@v2
 
-      - run: echo ${{ steps.get_version.outputs.version }}
+      - run: echo ${{ steps.get_version2.outputs.version }}
 
-      - run: echo ${{ steps.get_version.outputs.version-without-v }}
+      - run: echo ${{ steps.get_version2.outputs.version-without-v }}
 
       - name: get-npm-version
         id: package-version
