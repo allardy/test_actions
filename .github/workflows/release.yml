@@ -22,30 +22,14 @@ jobs:
         with:
           cache: 'yarn'
 
-      - uses: actions/cache@v3
-        id: cache
-        with:
-          path: bin/
-          key: build-${{ hashFiles('package.json') }}
-
       - name: hash
         run: |
           echo "pack: ${{ hashFiles('package.json') }}"
           echo "ts: ${{ hashFiles('src/**/*.ts') }}"
           echo "yl: ${{ hashFiles('yarn.lock') }}"
           echo "file: ${{ hashFiles('src/index.ts') }}"
-          echo "any: ${{ hashFiles('src/index.t?s') }}"
-          echo "any2: ${{ hashFiles('src/index.t?sx') }}"
+          echo "any: ${{ hashFiles('src/index.*s') }}"
+          echo "any2: ${{ hashFiles('src/index.(tsx|ts)') }}"
           echo "any3: ${{ hashFiles('src/index.t?sx?') }}"
           echo "any4: ${{ hashFiles('src/index.(t?sx?)') }}"
           echo "any5: ${{ hashFiles('src/index.(t?sx?|.pdf)') }}"
-
-      - name: Build
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: |
-          yarn
-          yarn build
-
-      - name: list
-        run: |
-          ls bin/
