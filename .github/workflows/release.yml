@@ -1,0 +1,40 @@
+name: Release
+on:
+  push:
+    branches:
+      - *
+  workflow_dispatch:
+
+jobs:
+  release_bin:
+    name: Release Installer
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+
+      - uses: actions/setup-node@v2
+        with:
+          cache: "yarn"
+
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: bin/
+          key: ${{ runner.os }}-v1-${{ hashFiles('**/yarn.lock') }}
+
+      - name: Build
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          yarn
+          yarn build
+
+      - name: list
+        run: |
+          ls bin/
+
