@@ -29,7 +29,7 @@ jobs:
           echo "yl: ${{ hashFiles('yarn.lock') }}"
           echo "file: ${{ hashFiles('src/index.ts') }}"
           echo "any: ${{ hashFiles('src/index.*s') }}"
-          echo "any2: ${{ hashFiles('src/index.(tsx|ts)') }}"
+          echo "any2: ${{ hashFiles('src/index.*s*') }}"
           echo "any3: ${{ hashFiles('src/index.t?sx?') }}"
           echo "any4: ${{ hashFiles('src/index.(t?sx?)') }}"
           echo "any5: ${{ hashFiles('src/index.(t?sx?|.pdf)') }}"
