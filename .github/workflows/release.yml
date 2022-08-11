@@ -31,7 +31,9 @@ jobs:
       - name: hash
         run: |
           echo "pack: ${{ hashFiles('package.json') }}"
-          echo "ts: ${{ hashFiles('**/.ts') }}"
+          echo "ts: ${{ hashFiles('src/**/*.ts') }}"
+          echo "yl: ${{ hashFiles('yarn.lock') }}"
+          echo "file: ${{ hashFiles('src/index.ts') }}"
 
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
