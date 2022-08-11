@@ -37,6 +37,8 @@ jobs:
           echo "any: ${{ hashFiles('src/index.t?s') }}"
           echo "any2: ${{ hashFiles('src/index.t?sx') }}"
           echo "any3: ${{ hashFiles('src/index.t?sx?') }}"
+          echo "any4: ${{ hashFiles('src/index.(t?sx?)') }}"
+          echo "any5: ${{ hashFiles('src/index.(t?sx?|.pdf)') }}"
 
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
