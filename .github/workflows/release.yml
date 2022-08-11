@@ -34,6 +34,9 @@ jobs:
           echo "ts: ${{ hashFiles('src/**/*.ts') }}"
           echo "yl: ${{ hashFiles('yarn.lock') }}"
           echo "file: ${{ hashFiles('src/index.ts') }}"
+          echo "any: ${{ hashFiles('src/index.t?s') }}"
+          echo "any2: ${{ hashFiles('src/index.t?sx') }}"
+          echo "any3: ${{ hashFiles('src/index.t?sx?') }}"
 
       - name: Build
         if: steps.cache.outputs.cache-hit != 'true'
