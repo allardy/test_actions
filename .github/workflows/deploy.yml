@@ -21,14 +21,36 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge master into prod
+      - name: Attempt to merge master into prod
+        id: merge_master_to_prod
         run: |
           git checkout prod
-          git merge origin/master || (
-            echo "Merging master to prod failed; syncing prod back to master" &&
-            git checkout master &&
-            git merge origin/prod &&
-            git push origin master &&
-            echo "Synced prod to master"
-          )
+          if ! git merge origin/master --no-ff; then
+            echo "merge_failed=true" >> $GITHUB_ENV
+          fi
+
+      - name: Check merge conflict and sync prod to master if needed
+        if: env.merge_failed == 'true'
+        run: |
+          echo "Conflict detected; syncing prod to master first."
+          git checkout master
+          if ! git merge origin/prod --no-ff; then
+            echo "Manual conflict resolution required on prod to master sync."
+            exit 1
+          fi
+          git push origin master
+
+      - name: Retry merge master to prod after syncing
+        if: env.merge_failed == 'true'
+        run: |
+          git checkout prod
+          if ! git merge origin/master --no-ff; then
+            echo "Manual conflict resolution required on final master to prod merge."
+            exit 1
+          fi
+          git push origin prod
+
+      - name: Final merge attempt if no conflict initially
+        if: env.merge_failed != 'true'
+        run: |
           git push origin prod
