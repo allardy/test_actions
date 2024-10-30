@@ -21,36 +21,36 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Merge master into prod
-        id: merge_master_into_prod
+      - name: Attempt to merge master into prod
+        id: merge_master_to_prod
         run: |
           git checkout prod
           if ! git merge origin/master --no-ff; then
-            echo "Merge conflict detected when merging master into prod."
+            echo "merge_failed=true" >> $GITHUB_ENV
+          fi
+
+      - name: Check merge conflict and sync prod to master if needed
+        if: env.merge_failed == 'true'
+        run: |
+          echo "Conflict detected; syncing prod to master first."
+          git checkout master
+          if ! git merge origin/prod --no-ff; then
+            echo "Manual conflict resolution required on prod to master sync."
+            exit 1
+          fi
+          git push origin master
+
+      - name: Retry merge master to prod after syncing
+        if: env.merge_failed == 'true'
+        run: |
+          git checkout prod
+          if ! git merge origin/master --no-ff; then
+            echo "Manual conflict resolution required on final master to prod merge."
             exit 1
           fi
           git push origin prod
 
-      - name: Merge prod back to master to sync changes
-        if: steps.merge_master_into_prod.outcome == 'failure'
+      - name: Final merge attempt if no conflict initially
+        if: env.merge_failed != 'true'
         run: |
-          git checkout master
-          if git merge origin/prod --no-ff; then
-            git push origin master
-            echo "Successfully merged prod back into master to resolve conflicts."
-          else
-            echo "Manual conflict resolution required for prod to master merge."
-            exit 1
-          fi
-
-      - name: Retry Merge master into prod after sync
-        if: steps.merge_master_into_prod.outcome == 'failure'
-        run: |
-          git checkout prod
-          if git merge origin/master --no-ff; then
-            git push origin prod
-            echo "Successfully re-merged master into prod after syncing prod to master."
-          else
-            echo "Manual conflict resolution required for master to prod merge."
-            exit 1
-          fi
+          git push origin prod
