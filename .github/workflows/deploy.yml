@@ -21,14 +21,26 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      - name: Check for changes on prod not in master
+        run: |
+          # Get diff of changes between prod and master
+          git checkout prod
+          git diff --name-only master..prod > changes_in_prod.txt
+
+      - name: Apply changes from prod to master if any
+        if: ${{ steps.check-for-changes.outputs.has_changes }}
+        run: |
+          # Only apply changes if there are any
+          if [ -s changes_in_prod.txt ]; then
+            echo "Applying changes from prod to master"
+            git checkout master
+            git checkout prod -- $(cat changes_in_prod.txt)
+            git commit -m "Sync changes from prod to master"
+            git push origin master
+          fi
+
       - name: Merge master into prod
         run: |
           git checkout prod
-          git merge origin/master || (
-            echo "Merging master to prod failed; syncing prod back to master" &&
-            git checkout master &&
-            git merge origin/prod &&
-            git push origin master &&
-            echo "Synced prod to master"
-          )
+          git merge origin/master --no-ff
           git push origin prod
