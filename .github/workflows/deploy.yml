@@ -1,0 +1,34 @@
+name: Deploy to Prod
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # Allows pushing to the repository
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch all branches and full commit history
+
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge master into prod
+        run: |
+          git checkout prod
+          git merge origin/master || (
+            echo "Merging master to prod failed; syncing prod back to master" &&
+            git checkout master &&
+            git merge origin/prod &&
+            git push origin master &&
+            echo "Synced prod to master"
+          )
+          git push origin prod
