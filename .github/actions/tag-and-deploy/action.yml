@@ -29,13 +29,13 @@ runs:
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
 
-    - name: Tag Docker image as stable
-      shell: bash
-      run: |
-        IMAGE_NAME="${{ inputs.repository }}"
-        IMAGE_TAG="${{ inputs.image-tag }}"
-        docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:stable"
-        docker push "$IMAGE_NAME:stable"
+    # - name: Tag Docker image as stable
+    #   shell: bash
+    #   run: |
+    #     IMAGE_NAME="${{ inputs.repository }}"
+    #     IMAGE_TAG="${{ inputs.image-tag }}"
+    #     docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:stable"
+    #     docker push "$IMAGE_NAME:stable"
 
     - name: Find Cluster by Prefix
       shell: bash
@@ -69,8 +69,5 @@ runs:
           fi
 
           echo "Updating service: $SERVICE_ARN"
-          aws ecs update-service \
-            --cluster "$CLUSTER_ARN" \
-            --service "$SERVICE_ARN" \
-            --force-new-deployment
+         
         done
