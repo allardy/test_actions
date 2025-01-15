@@ -1,28 +1,22 @@
 name: Tag and Deploy
 
-on:
-  workflow_call:
-    inputs:
-      repository:
-        description: "The ECR repository name"
-        required: true
-        type: string
-      cluster:
-        description: "The base ECS cluster name (prefix)"
-        required: true
-        type: string
-      services:
-        description: "Comma-separated list of ECS service name prefixes"
-        required: true
-        type: string
-      image-tag:
-        description: "The Docker image tag to promote to stable"
-        required: true
-        type: string
-
-permissions:
-  id-token: write
-  contents: read
+inputs:
+  repository:
+    description: "The ECR repository name"
+    required: true
+    type: string
+  cluster:
+    description: "The base ECS cluster name (prefix)"
+    required: true
+    type: string
+  services:
+    description: "Comma-separated list of ECS service name prefixes"
+    required: true
+    type: string
+  image-tag:
+    description: "The Docker image tag to promote to stable"
+    required: true
+    type: string
 
 jobs:
   tag-and-deploy:
