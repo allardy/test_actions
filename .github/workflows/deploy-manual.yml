@@ -18,6 +18,11 @@ on:
         required: false
         default: false
         type: boolean
+      deploy-dev:
+        description: 'Deploy to Dev?'
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   id-token: write
@@ -46,6 +51,17 @@ jobs:
 
           echo "Service '$SELECTED_SERVICE' is valid."
           echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+
+      - name: Deploy to Dev
+        if: inputs.deploy-dev == true
+        env:
+          AWS_PROFILE: personal
+        uses: ./.github/workflows/tag-and-deploy.yml
+        with:
+          repository: ${{ inputs.service }}
+          cluster: ${{ fromJson(env.CONFIG).cluster }}
+          services: ${{ join(fromJson(env.CONFIG).services, ',') }}
+          image-tag: ${{ github.sha }}
 
       - name: Deploy to Staging
         if: inputs.deploy-staging == true
