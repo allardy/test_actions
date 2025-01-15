@@ -1,0 +1,46 @@
+name: Manual Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'master'
+        type: string
+      environment:
+        description: 'Environment to deploy (staging or prod)'
+        required: true
+        default: 'staging'
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  manual-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Build and tag Docker image
+        uses: ./.github/actions/docker-build
+        with:
+          dockerfile: tables-api.Dockerfile
+          repository: tables-api
+          push: true
+          sentry-auth-token: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Deploy to Selected Environment
+        env:
+          AWS_PROFILE: ${{ format('cloud-{0}', inputs.environment) }}
+        uses: ./.github/workflows/tag-and-deploy.yml
+        with:
+          repository: tables-api
+          cluster: Cloud-TablesApi
+          services: Cloud-TablesApi-Service,Cloud-TablesApi-Worker
+          image-tag: ${{ github.sha }}
