@@ -67,7 +67,7 @@ jobs:
         if: inputs.deploy-staging == true
         env:
           AWS_PROFILE: cloud-staging
-        uses: ./.github/workflows/tag-and-deploy.yml
+        uses: ./.github/actions/tag-and-deploy.yml
         with:
           repository: ${{ inputs.service }}
           cluster: ${{ fromJson(env.CONFIG).cluster }}
@@ -78,7 +78,7 @@ jobs:
         if: inputs.deploy-production == true
         env:
           AWS_PROFILE: cloud-production
-        uses: ./.github/workflows/tag-and-deploy.yml
+        uses: ./.github/actions/tag-and-deploy.yml
         with:
           repository: ${{ inputs.service }}
           cluster: ${{ fromJson(env.CONFIG).cluster }}
