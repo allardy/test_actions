@@ -32,28 +32,26 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
-      - name: Load Service Configuration
-        id: config
-        run: |
-          SERVICE_FILE="services.json"
-          SELECTED_SERVICE="${{ inputs.service }}"
-          CONFIG=$(jq -c --arg service "$SELECTED_SERVICE" '.[$service]' "$SERVICE_FILE")
+      # - name: Load Service Configuration
+      #   id: config
+      #   run: |
+      #     SERVICE_FILE="services.json"
+      #     SELECTED_SERVICE="${{ inputs.service }}"
+      #     CONFIG=$(jq -c --arg service "$SELECTED_SERVICE" '.[$service]' "$SERVICE_FILE")
 
-          if [ "$CONFIG" == "null" ]; then
-            echo "Service $SELECTED_SERVICE not found in $SERVICE_FILE"
-            exit 1
-          fi
+      #     if [ "$CONFIG" == "null" ]; then
+      #       echo "Service $SELECTED_SERVICE not found in $SERVICE_FILE"
+      #       exit 1
+      #     fi
 
-          echo "Service '$SELECTED_SERVICE' is valid."
-          echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+      #     echo "Service '$SELECTED_SERVICE' is valid."
+      #     echo "CONFIG=$CONFIG" >> $GITHUB_ENV
 
       - name: Deploy to Staging
         if: inputs.deploy-staging == true
         uses: ./.github/actions/tag-and-deploy
         with:
-          repository: ${{ fromJson(env.CONFIG).repository }}
-          cluster: ${{ fromJson(env.CONFIG).cluster }}
-          services: ${{ join(fromJson(env.CONFIG).services, ',') }}
+          service: ${{ inputs.service }}
           image-tag: ${{ github.sha }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
