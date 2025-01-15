@@ -44,6 +44,7 @@ jobs:
             exit 1
           fi
 
+          echo "Service '$SELECTED_SERVICE' is valid."
           echo "CONFIG=$CONFIG" >> $GITHUB_ENV
 
       - name: Deploy to Staging
