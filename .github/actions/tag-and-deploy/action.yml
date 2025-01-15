@@ -17,6 +17,22 @@ inputs:
     description: 'The Docker image tag to promote to stable'
     required: true
     type: string
+  # aws-access-key-id:
+  #   description: 'AWS access key ID'
+  #   required: true
+  #   type: string
+  # aws-secret-access-key:
+  #   description: 'AWS secret access key'
+  #   required: true
+  #   type: string
+  # aws-region:
+  #   description: 'AWS region'
+  #   required: true
+  #   type: string
+  # aws-session-token:
+  #   description: 'AWS session token (optional)'
+  #   required: false
+  #   type: string
 
 runs:
   using: 'composite'
@@ -31,14 +47,13 @@ runs:
     #     role-session-name: container_pusher
     #     role-to-assume: arn:aws:iam::986677156374:role/actions/build/container_pusher
     #     aws-region: us-east-1
-
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v1
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      # env:
+      #   AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+      #   AWS_REGION: ${{ inputs.aws-region }}
+      #   AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+      #   AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
 
     # - name: Tag Docker image as stable
     #   shell: bash
@@ -51,11 +66,11 @@ runs:
     - name: Find Cluster by Prefix
       shell: bash
       id: cluster
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      # env:
+      #   AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+      #   AWS_REGION: ${{ inputs.aws-region }}
+      #   AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+      #   AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
       run: |
         CLUSTER_ARN=$(aws ecs list-clusters \
           --query "clusterArns[?contains(@, '${{ inputs.cluster }}')]" \
@@ -70,11 +85,11 @@ runs:
         echo "CLUSTER_ARN=$CLUSTER_ARN" >> $GITHUB_ENV
 
     - name: Deploy Services
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+      # env:
+      #   AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+      #   AWS_REGION: ${{ inputs.aws-region }}
+      #   AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+      #   AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
       shell: bash
       run: |
         IFS=',' read -r -a SERVICES <<< "${{ inputs.services }}"
