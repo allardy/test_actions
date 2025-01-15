@@ -2,72 +2,71 @@ name: Tag and Deploy
 
 inputs:
   repository:
-    description: "The ECR repository name"
+    description: 'The ECR repository name'
     required: true
     type: string
   cluster:
-    description: "The base ECS cluster name (prefix)"
+    description: 'The base ECS cluster name (prefix)'
     required: true
     type: string
   services:
-    description: "Comma-separated list of ECS service name prefixes"
+    description: 'Comma-separated list of ECS service name prefixes'
     required: true
     type: string
   image-tag:
-    description: "The Docker image tag to promote to stable"
+    description: 'The Docker image tag to promote to stable'
     required: true
     type: string
 
-jobs:
-  tag-and-deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS Profile
-        run: |
-          echo "Using AWS_PROFILE=${AWS_PROFILE:-default}"
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS Profile
+      run: |
+        echo "Using AWS_PROFILE=${AWS_PROFILE:-default}"
 
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Tag Docker image as stable
-        run: |
-          IMAGE_NAME="${{ inputs.repository }}"
-          IMAGE_TAG="${{ inputs.image-tag }}"
-          docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:stable"
-          docker push "$IMAGE_NAME:stable"
+    - name: Tag Docker image as stable
+      run: |
+        IMAGE_NAME="${{ inputs.repository }}"
+        IMAGE_TAG="${{ inputs.image-tag }}"
+        docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:stable"
+        docker push "$IMAGE_NAME:stable"
 
-     - name: Find Cluster by Prefix
-        id: cluster
-        run: |
-          CLUSTER_ARN=$(aws ecs list-clusters \
-            --query "clusterArns[?contains(@, '${{ inputs.cluster }}')]" \
+    - name: Find Cluster by Prefix
+      id: cluster
+      run: |
+        CLUSTER_ARN=$(aws ecs list-clusters \
+          --query "clusterArns[?contains(@, '${{ inputs.cluster }}')]" \
+          --output text)
+
+        if [ -z "$CLUSTER_ARN" ]; then
+          echo "No cluster found matching prefix: ${{ inputs.cluster }}"
+          exit 1
+        fi
+
+        echo "Cluster found: $CLUSTER_ARN"
+        echo "CLUSTER_ARN=$CLUSTER_ARN" >> $GITHUB_ENV
+
+    - name: Deploy Services
+      run: |
+        IFS=',' read -r -a SERVICES <<< "${{ inputs.services }}"
+        for SERVICE_PREFIX in "${SERVICES[@]}"; do
+          SERVICE_ARN=$(aws ecs list-services \
+            --cluster "$CLUSTER_ARN" \
+            --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
             --output text)
-          
-          if [ -z "$CLUSTER_ARN" ]; then
-            echo "No cluster found matching prefix: ${{ inputs.cluster }}"
+
+          if [ -z "$SERVICE_ARN" ]; then
+            echo "No service found for prefix: $SERVICE_PREFIX"
             exit 1
           fi
 
-          echo "Cluster found: $CLUSTER_ARN"
-          echo "CLUSTER_ARN=$CLUSTER_ARN" >> $GITHUB_ENV
-
-      - name: Deploy Services
-        run: |
-          IFS=',' read -r -a SERVICES <<< "${{ inputs.services }}"
-          for SERVICE_PREFIX in "${SERVICES[@]}"; do
-            SERVICE_ARN=$(aws ecs list-services \
-              --cluster "$CLUSTER_ARN" \
-              --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
-              --output text)
-
-            if [ -z "$SERVICE_ARN" ]; then
-              echo "No service found for prefix: $SERVICE_PREFIX"
-              exit 1
-            fi
-
-            echo "Updating service: $SERVICE_ARN"
-            aws ecs update-service \
-              --cluster "$CLUSTER_ARN" \
-              --service "$SERVICE_ARN" \
-              --force-new-deployment
-          done
+          echo "Updating service: $SERVICE_ARN"
+          aws ecs update-service \
+            --cluster "$CLUSTER_ARN" \
+            --service "$SERVICE_ARN" \
+            --force-new-deployment
+        done
