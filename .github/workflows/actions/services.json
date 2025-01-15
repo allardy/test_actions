@@ -1,0 +1,16 @@
+{
+  "tables-api": {
+    "cluster": "Cloud-TablesApi",
+    "services": [
+      "Cloud-TablesApi-Service",
+      "Cloud-TablesApi-Worker"
+    ]
+  },
+  "another-service": {
+    "cluster": "Cloud-AnotherService",
+    "services": [
+      "Cloud-AnotherService-Worker",
+      "Cloud-AnotherService-Task"
+    ]
+  }
+}

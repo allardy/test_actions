@@ -1,0 +1,74 @@
+name: Manual Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        required: true
+        default: 'master'
+        type: string
+      service:
+        description: 'Service to deploy'
+        required: true
+        type: choice
+        options: ['tables-api', 'another-service']
+      deploy-staging:
+        description: 'Deploy to Staging?'
+        required: false
+        default: false
+        type: boolean
+      deploy-production:
+        description: 'Deploy to Production?'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  manual-deployment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
+
+      - name: Load Service Configuration
+        id: config
+        run: |
+          SERVICE_FILE="services.json"
+          SELECTED_SERVICE="${{ inputs.service }}"
+          CONFIG=$(jq -r --arg service "$SELECTED_SERVICE" '.[$service]' "$SERVICE_FILE")
+
+          if [ "$CONFIG" == "null" ]; then
+            echo "Service $SELECTED_SERVICE not found in $SERVICE_FILE"
+            exit 1
+          fi
+
+          echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+
+      - name: Deploy to Staging
+        if: inputs.deploy-staging == true
+        env:
+          AWS_PROFILE: cloud-staging
+        uses: ./.github/workflows/tag-and-deploy.yml
+        with:
+          repository: ${{ inputs.service }}
+          cluster: ${{ fromJson(env.CONFIG).cluster }}
+          services: ${{ join(fromJson(env.CONFIG).services, ',') }}
+          image-tag: ${{ github.sha }}
+
+      - name: Deploy to Production
+        if: inputs.deploy-production == true
+        env:
+          AWS_PROFILE: cloud-production
+        uses: ./.github/workflows/tag-and-deploy.yml
+        with:
+          repository: ${{ inputs.service }}
+          cluster: ${{ fromJson(env.CONFIG).cluster }}
+          services: ${{ join(fromJson(env.CONFIG).services, ',') }}
+          image-tag: ${{ github.sha }}
