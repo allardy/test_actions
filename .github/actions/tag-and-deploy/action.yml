@@ -22,6 +22,7 @@ runs:
   using: 'composite'
   steps:
     - name: Configure AWS Profile
+      shell: bash
       run: |
         echo "Using AWS_PROFILE=${AWS_PROFILE:-default}"
 
@@ -29,6 +30,7 @@ runs:
       uses: aws-actions/amazon-ecr-login@v1
 
     - name: Tag Docker image as stable
+      shell: bash
       run: |
         IMAGE_NAME="${{ inputs.repository }}"
         IMAGE_TAG="${{ inputs.image-tag }}"
@@ -36,6 +38,7 @@ runs:
         docker push "$IMAGE_NAME:stable"
 
     - name: Find Cluster by Prefix
+      shell: bash
       id: cluster
       run: |
         CLUSTER_ARN=$(aws ecs list-clusters \
@@ -51,6 +54,7 @@ runs:
         echo "CLUSTER_ARN=$CLUSTER_ARN" >> $GITHUB_ENV
 
     - name: Deploy Services
+      shell: bash
       run: |
         IFS=',' read -r -a SERVICES <<< "${{ inputs.services }}"
         for SERVICE_PREFIX in "${SERVICES[@]}"; do
