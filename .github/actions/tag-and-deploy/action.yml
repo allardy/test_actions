@@ -30,6 +30,7 @@ runs:
   using: 'composite'
   steps:
     - name: Load Service Configuration
+      shell: bash
       id: config
       run: |
         SERVICE_FILE="services.json"
