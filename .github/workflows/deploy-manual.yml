@@ -37,7 +37,7 @@ jobs:
         run: |
           SERVICE_FILE="services.json"
           SELECTED_SERVICE="${{ inputs.service }}"
-          CONFIG=$(jq -r --arg service "$SELECTED_SERVICE" '.[$service]' "$SERVICE_FILE")
+          CONFIG=$(jq -c --arg service "$SELECTED_SERVICE" '.[$service]' "$SERVICE_FILE")
 
           if [ "$CONFIG" == "null" ]; then
             echo "Service $SELECTED_SERVICE not found in $SERVICE_FILE"
