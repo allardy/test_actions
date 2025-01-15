@@ -1,16 +1,18 @@
 {
-  "tables-api": {
+  "Tables API": {
+    "repository": "tables-api",
     "cluster": "Cloud-TablesApi",
     "services": [
       "Cloud-TablesApi-Service",
       "Cloud-TablesApi-Worker"
     ]
   },
-  "another-service": {
-    "cluster": "Cloud-AnotherService",
+  "CDM Backend": {
+    "repository": "controller",
+    "cluster": "Cloud-Controller",
     "services": [
-      "Cloud-AnotherService-Worker",
-      "Cloud-AnotherService-Task"
+      "Cloud-Controller-Api",
+      "Cloud-Controller-Usage"
     ]
   }
 }
