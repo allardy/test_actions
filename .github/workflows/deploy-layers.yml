@@ -66,6 +66,9 @@ jobs:
             # Save the layer package as a ZIP file
             docker run --rm "$LAYER" cat /opt/layer.zip > "$LAYER_PATH/layer.zip"
 
+            # Save the layer on S3
+            aws s3 cp $LAYER_PATH/layer.zip s3://layers-test-integration/lambda-layers/$LAYER.zip
+
             # Check if the layer exists
             EXISTS=$(aws lambda list-layers --query "Layers[?LayerName=='$LAYER'] | length(@)")
             if [[ $EXISTS -eq 0 ]]; then
@@ -73,14 +76,14 @@ jobs:
               aws lambda publish-layer-version \
                 --layer-name "$LAYER" \
                 --description "Lambda layer for $LAYER" \
-                --zip-file "fileb://$LAYER_PATH/layer.zip" \
-                --compatible-runtimes "nodejs16.x" "nodejs18.x" "nodejs20.x"
+                --content S3Bucket=layers-test-integration,S3Key=lambda-layers/$LAYER.zip \
+                --compatible-runtimes "nodejs20.x"
             else
               echo "Layer $LAYER exists, publishing a new version."
               aws lambda publish-layer-version \
                 --layer-name "$LAYER" \
                 --description "Updated version of $LAYER" \
-                --zip-file "fileb://$LAYER_PATH/layer.zip" \
-                --compatible-runtimes "nodejs16.x" "nodejs18.x" "nodejs20.x"
+                --content S3Bucketlayers-test-integration,S3Key=lambda-layers/$LAYER.zip \
+                --compatible-runtimes "nodejs20.x"
             fi
           done
