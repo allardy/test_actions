@@ -16,14 +16,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # Fetch all history for the repository
 
       - name: Find changed layers
         id: find-changes
         run: |
-          # Get the list of modified layers
+          # Get the list of modified layers in the last commit
           CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq)
           echo "CHANGED_LAYERS=${CHANGED_LAYERS}" >> $GITHUB_ENV
+        shell: bash
 
       - name: Build and publish layers
         if: env.CHANGED_LAYERS != ''
