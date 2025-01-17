@@ -19,6 +19,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Fetch all history for the repository
+      - name: Debug Git State
+        run: |
+          git log --oneline
+          git status
+          git diff --name-only HEAD~1 HEAD
+        shell: bash
 
       - name: Find changed layers
         id: find-changes
