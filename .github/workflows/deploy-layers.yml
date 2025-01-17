@@ -1,0 +1,69 @@
+name: Publish Lambda Layers
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths: ['layers/**']
+    branches: ['master']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish-lambda-layers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::236194216641:role/actions/deploy/layer_skynet
+          aws-region: us-east-1
+
+      - name: Find changed layers
+        id: find-changes
+        run: |
+          # Get the list of modified layers
+          CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq)
+          echo "CHANGED_LAYERS=${CHANGED_LAYERS}" >> $GITHUB_ENV
+
+      - name: Build and publish layers
+        if: env.CHANGED_LAYERS != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        run: |
+          for LAYER in $CHANGED_LAYERS; do
+            echo "Processing layer: $LAYER"
+            LAYER_PATH="layers/$LAYER"
+
+            # Build the layer using Docker
+            docker build -t "$LAYER" "$LAYER_PATH"
+
+            # Save the layer package as a ZIP file
+            docker run --rm "$LAYER" cat /opt/layer.zip > "$LAYER_PATH/layer.zip"
+
+            # Check if the layer exists
+            EXISTS=$(aws lambda list-layers --query "Layers[?LayerName=='$LAYER'] | length(@)")
+            if [[ $EXISTS -eq 0 ]]; then
+              echo "Layer $LAYER does not exist, creating it."
+              aws lambda create-layer-version \
+                --layer-name "$LAYER" \
+                --description "Lambda layer for $LAYER" \
+                --zip-file "fileb://$LAYER_PATH/layer.zip" \
+                --compatible-runtimes "nodejs16.x" "nodejs18.x" "nodejs20.x"
+            else
+              echo "Layer $LAYER exists, publishing a new version."
+              aws lambda publish-layer-version \
+                --layer-name "$LAYER" \
+                --description "Updated version of $LAYER" \
+                --zip-file "fileb://$LAYER_PATH/layer.zip" \
+                --compatible-runtimes "nodejs16.x" "nodejs18.x" "nodejs20.x"
+            fi
+          done
