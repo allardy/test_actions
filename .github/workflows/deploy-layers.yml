@@ -29,7 +29,10 @@ jobs:
       - name: Find changed layers
         id: find-changes
         run: |
-          CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq)
+          CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq || true)
+          if [[ -z "$CHANGED_LAYERS" ]]; then
+            echo "No layers were changed."
+          fi
           echo "CHANGED_LAYERS=${CHANGED_LAYERS}" >> $GITHUB_ENV
         shell: bash
 
