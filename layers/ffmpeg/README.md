@@ -10,7 +10,7 @@ docker run --rm -v "./dist:/layer" $IMAGE_TAG
 docker build -t ffmpeg1 .
 docker run --rm -v "a:/dev/integration-layers/packages/layers/ffmpeg/dist:/layer" ffmpeg1
 
-### Test integration
+### Test integrationd
 
 set SECRET_BOTPRESS_BOT_ID=abc
 set SECRET_BOTPRESS_TOKEN=abc
