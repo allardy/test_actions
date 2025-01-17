@@ -26,15 +26,27 @@ jobs:
           git diff --name-only HEAD~1 HEAD
         shell: bash
 
-      - name: Find changed layers
-        id: find-changes
+      # - name: Find changed layers
+      #   id: find-changes
+      #   run: |
+      #     CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq || true)
+      #     if [[ -z "$CHANGED_LAYERS" ]]; then
+      #       echo "No layers were changed."
+      #     fi
+      #     echo "CHANGED_LAYERS=${CHANGED_LAYERS}" >> $GITHUB_ENV
+      #   shell: bash
+      - name: Determine layers to process
+        id: determine-layers
         run: |
-          CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq || true)
-          if [[ -z "$CHANGED_LAYERS" ]]; then
-            echo "No layers were changed."
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Get all layers for manual trigger
+            CHANGED_LAYERS=$(ls -d layers/* | xargs -n 1 basename)
+          else
+            # Get changed layers for push events
+            CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq || true)
           fi
           echo "CHANGED_LAYERS=${CHANGED_LAYERS}" >> $GITHUB_ENV
-        shell: bash
+          echo "Determined layers: ${CHANGED_LAYERS}"
 
       - name: Build and publish layers
         if: env.CHANGED_LAYERS != ''
@@ -58,7 +70,7 @@ jobs:
             EXISTS=$(aws lambda list-layers --query "Layers[?LayerName=='$LAYER'] | length(@)")
             if [[ $EXISTS -eq 0 ]]; then
               echo "Layer $LAYER does not exist, creating it."
-              aws lambda create-layer-version \
+              aws lambda publish-layer-version \
                 --layer-name "$LAYER" \
                 --description "Lambda layer for $LAYER" \
                 --zip-file "fileb://$LAYER_PATH/layer.zip" \
