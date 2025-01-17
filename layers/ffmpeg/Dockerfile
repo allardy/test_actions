@@ -28,7 +28,7 @@ RUN mkdir -p /opt/bin && \
 ENV PATH="/opt/bin:$PATH"
 
 # Zip the nodejs directory (structure is important)
-RUN cd /opt && zip -r integration-layer.zip nodejs bin
+RUN cd /opt && zip -r layer.zip nodejs bin
 
 # Define the output directory
 VOLUME /layer
