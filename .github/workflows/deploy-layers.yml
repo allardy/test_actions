@@ -18,7 +18,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch all history for the repository
+          fetch-depth: 0
+
       - name: Debug Git State
         run: |
           git log --oneline
@@ -26,15 +27,6 @@ jobs:
           git diff --name-only HEAD~1 HEAD
         shell: bash
 
-      # - name: Find changed layers
-      #   id: find-changes
-      #   run: |
-      #     CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq || true)
-      #     if [[ -z "$CHANGED_LAYERS" ]]; then
-      #       echo "No layers were changed."
-      #     fi
-      #     echo "CHANGED_LAYERS=${CHANGED_LAYERS}" >> $GITHUB_ENV
-      #   shell: bash
       - name: Determine layers to process
         id: determine-layers
         run: |
@@ -69,21 +61,11 @@ jobs:
             # Save the layer on S3
             aws s3 cp $LAYER_PATH/layer.zip s3://layers-test-integration/lambda-layers/$LAYER.zip
 
-            # Check if the layer exists
-            EXISTS=$(aws lambda list-layers --query "Layers[?LayerName=='$LAYER'] | length(@)")
-            if [[ $EXISTS -eq 0 ]]; then
-              echo "Layer $LAYER does not exist, creating it."
-              aws lambda publish-layer-version \
-                --layer-name "$LAYER" \
-                --description "Lambda layer for $LAYER" \
-                --content S3Bucket=layers-test-integration,S3Key=lambda-layers/$LAYER.zip \
-                --compatible-runtimes "nodejs20.x"
-            else
-              echo "Layer $LAYER exists, publishing a new version."
-              aws lambda publish-layer-version \
-                --layer-name "$LAYER" \
-                --description "Updated version of $LAYER" \
-                --content S3Bucketlayers-test-integration,S3Key=lambda-layers/$LAYER.zip \
-                --compatible-runtimes "nodejs20.x"
-            fi
+            # Publish the layer
+            aws lambda publish-layer-version \
+              --layer-name "layer-$LAYER" \
+              --description "Updated version of $LAYER" \
+              --content S3Bucketlayers-test-integration,S3Key=lambda-layers/$LAYER.zip \
+              --compatible-runtimes "nodejs20.x"
+
           done
