@@ -34,8 +34,8 @@ jobs:
             CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | grep -v '^bot-layer$' | uniq || true)
           fi
 
-          # Remove quotes and normalize to space-separated values
-          CHANGED_LAYERS=$(echo "$CHANGED_LAYERS" | tr '\n' ' ')
+          # Remove any quotes and normalize to space-separated values
+          CHANGED_LAYERS=$(echo "$CHANGED_LAYERS" | tr '\n' ' ' | sed 's/"//g')
 
           echo "CHANGED_LAYERS=$CHANGED_LAYERS" >> $GITHUB_ENV
           echo "Determined layers: $CHANGED_LAYERS"
