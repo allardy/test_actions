@@ -37,10 +37,10 @@ jobs:
           echo "CHANGED_LAYERS=$(echo \"$CHANGED_LAYERS\" | tr '\n' ' ')" >> $GITHUB_ENV
           echo "Determined layers: $(echo \"$CHANGED_LAYERS\" | tr '\n' ' ')"
 
-      - uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: arn:aws:iam::236194216641:role/actions/deploy/layer_skynet
-          aws-region: us-east-1
+      # - uses: aws-actions/configure-aws-credentials@v2
+      #   with:
+      #     role-to-assume: arn:aws:iam::236194216641:role/actions/deploy/layer_skynet
+      #     aws-region: us-east-1
 
       - name: Build and publish layers
         if: env.CHANGED_LAYERS != ''
@@ -52,16 +52,16 @@ jobs:
             # Build the layer using Docker
             docker build -t "$LAYER" "$LAYER_PATH"
 
-            # Save the layer package as a ZIP file
-            docker run --rm "$LAYER" cat /opt/layer.zip > "$LAYER_PATH/layer.zip"
+            # # Save the layer package as a ZIP file
+            # docker run --rm "$LAYER" cat /opt/layer.zip > "$LAYER_PATH/layer.zip"
 
-            # Save the layer on S3
-            aws s3 cp "$LAYER_PATH/layer.zip" s3://botpress-lambda-layers/layers/staging/$LAYER.zip
+            # # Save the layer on S3
+            # aws s3 cp "$LAYER_PATH/layer.zip" s3://botpress-lambda-layers/layers/staging/$LAYER.zip
 
-            # Publish the layer
-            aws lambda publish-layer-version \
-              --layer-name "$LAYER" \
-              --description "Updated version of $LAYER" \
-              --content S3Bucket=botpress-lambda-layers,S3Key=layers/staging/$LAYER.zip \
-              --compatible-runtimes "nodejs20.x"
+            # # Publish the layer
+            # aws lambda publish-layer-version \
+            #   --layer-name "$LAYER" \
+            #   --description "Updated version of $LAYER" \
+            #   --content S3Bucket=botpress-lambda-layers,S3Key=layers/staging/$LAYER.zip \
+            #   --compatible-runtimes "nodejs20.x"
           done
