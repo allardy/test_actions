@@ -1,0 +1,58 @@
+name: Publish Layers
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths: ['layers/**']
+    branches: ['master']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish-layers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: List changed layer folders
+        id: list-layers
+        run: |
+          changed_folders=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | awk -F/ '{print $2}' | sort | uniq)
+          if [ -z "$changed_folders" ]; then
+            echo "No changed layers. Exiting."
+            exit 0
+          fi
+          echo "::set-output name=folders::$(echo $changed_folders | tr '\n' ',')"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::236194216641:role/actions/deploy/layer_skynet
+          aws-region: us-east-1
+
+      - name: Publish layers
+        run: |
+          for LAYER in $(echo "${{ steps.list-layers.outputs.folders }}" | tr ',' '\n'); do
+            echo "Processing layer: $LAYER"
+            LAYER_PATH="layers/$LAYER"
+
+             # Build the layer using Docker
+            docker build -t "$LAYER" "$LAYER_PATH"
+
+            # Save the layer package as a ZIP file
+            docker run --rm "$LAYER" cat /opt/layer.zip > "$LAYER_PATH/layer.zip"
+
+            # Save the layer on S3
+            aws s3 cp $LAYER_PATH/layer.zip s3://layers-test-integration/lambda-layers/$LAYER.zip
+            
+            # Publish the layer
+            aws lambda publish-layer-version \
+              --layer-name "$LAYER" \
+              --description "$LAYER" \
+              --content S3Bucketlayers-test-integration,S3Key=lambda-layers/$LAYER.zip \
+              --compatible-runtimes "nodejs20.x"
+          done
