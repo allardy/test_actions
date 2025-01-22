@@ -21,3 +21,13 @@ jobs:
         id: determine-sha
         run: |
           echo ${{ github.sha }}
+
+      - name: Prepare Commit Message
+        id: prepare-message
+        run: |
+          SHORT_CURRENT_COMMIT=${{ github.sha:0:7 }}
+          SHORT_MASTER_COMMIT=${{ github.sha:0:7 }}
+          echo "SHORT_CURRENT_COMMIT=$SHORT_CURRENT_COMMIT" >> $GITHUB_ENV
+          echo "SHORT_MASTER_COMMIT=$SHORT_MASTER_COMMIT" >> $GITHUB_ENV
+
+          echo 'auto(cloud): Updating Skynet Images from ${{ env.SHORT_CURRENT_COMMIT }} to ${{ env.SHORT_MASTER_COMMIT }}'
