@@ -38,7 +38,7 @@ jobs:
             echo "Prod is ahead of master. Syncing prod to master first..."
             git checkout master
             git pull origin master
-            git merge --no-ff origin/prod -m "Merge prod into master to sync emergency changes"
+            git merge --no-ff origin/prod -m "Merge prod into master via GitHub Actions [skip ci]"
             git push origin master
           else
             echo "Prod is up-to-date with master."
