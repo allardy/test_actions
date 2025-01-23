@@ -1,0 +1,18 @@
+{
+  "Tables API": {
+    "repository": "tables-api",
+    "cluster": "Cloud-TablesApi",
+    "services": [
+      "Cloud-TablesApi-Service",
+      "Cloud-TablesApi-Worker"
+    ]
+  },
+  "CDM Backend": {
+    "repository": "controller",
+    "cluster": "Cloud-Controller",
+    "services": [
+      "Cloud-Controller-Api",
+      "Cloud-Controller-Usage"
+    ]
+  }
+}

@@ -1,0 +1,71 @@
+name: Publish Lambda Layers
+
+on:
+  workflow_dispatch: {}
+  push:
+    paths: ['layers/**']
+    branches: ['master']
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  publish-lambda-layers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Debug Git State
+        run: |
+          git log --oneline
+          git status
+          git diff --name-only HEAD~1 HEAD
+        shell: bash
+
+      - name: Determine layers to process
+        id: determine-layers
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            # Get all layers for manual trigger
+            CHANGED_LAYERS=$(ls -d layers/* | xargs -n 1 basename)
+          else
+            # Get changed layers for push events
+            CHANGED_LAYERS=$(git diff --name-only HEAD~1 HEAD | grep '^layers/' | cut -d'/' -f2 | uniq || true)
+          fi
+          echo "CHANGED_LAYERS=${CHANGED_LAYERS}" >> $GITHUB_ENV
+          echo "Determined layers: ${CHANGED_LAYERS}"
+
+      - name: Build and publish layers
+        if: env.CHANGED_LAYERS != ''
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_SESSION_TOKEN: ${{ secrets.AWS_SESSION_TOKEN }}
+        run: |
+          for LAYER in $CHANGED_LAYERS; do
+            echo "Processing layer: $LAYER"
+            LAYER_PATH="layers/$LAYER"
+
+            # Build the layer using Docker
+            docker build -t "$LAYER" "$LAYER_PATH"
+
+            # Save the layer package as a ZIP file
+            docker run --rm "$LAYER" cat /opt/layer.zip > "$LAYER_PATH/layer.zip"
+
+            # Save the layer on S3
+            aws s3 cp $LAYER_PATH/layer.zip s3://layers-test-integration/lambda-layers/$LAYER.zip
+
+            # Publish the layer
+            aws lambda publish-layer-version \
+              --layer-name "layer-$LAYER" \
+              --description "Updated version of $LAYER" \
+              --content S3Bucketlayers-test-integration,S3Key=lambda-layers/$LAYER.zip \
+              --compatible-runtimes "nodejs20.x"
+
+          done

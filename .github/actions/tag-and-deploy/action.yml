@@ -1,0 +1,117 @@
+name: Tag and Deploy
+
+inputs:
+  service:
+    description: 'Name of the service to deploy'
+    required: true
+    type: string
+  image-tag:
+    description: 'The Docker image tag to promote to stable'
+    required: true
+    type: string
+  aws-access-key-id:
+    description: 'AWS access key ID'
+    required: true
+    type: string
+  aws-secret-access-key:
+    description: 'AWS secret access key'
+    required: true
+    type: string
+  aws-region:
+    description: 'AWS region'
+    required: true
+    type: string
+  aws-session-token:
+    description: 'AWS session token (optional)'
+    required: false
+    type: string
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Load Service Configuration
+      shell: bash
+      id: config
+      run: |
+        SERVICE_FILE="services.json"
+        SELECTED_SERVICE="${{ inputs.service }}"
+        CONFIG=$(jq -c --arg service "$SELECTED_SERVICE" '.[$service]' "$SERVICE_FILE")
+
+        if [ "$CONFIG" == "null" ]; then
+          echo "Service $SELECTED_SERVICE not found in $SERVICE_FILE"
+          exit 1
+        fi
+
+        echo "Service '$SELECTED_SERVICE' is valid."
+        echo "CONFIG=$CONFIG" >> $GITHUB_ENV
+
+    - name: Configure AWS Profile
+      shell: bash
+      run: |
+        echo "Using AWS_PROFILE=${AWS_PROFILE:-default}"
+
+    # - uses: aws-actions/configure-aws-credentials@v3
+    #   with:
+    #     role-session-name: container_pusher
+    #     role-to-assume: arn:aws:iam::986677156374:role/actions/build/container_pusher
+    #     aws-region: us-east-1
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_REGION: ${{ inputs.aws-region }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
+
+    # - name: Tag Docker image as stable
+    #   shell: bash
+    #   run: |
+    #     IMAGE_NAME="${{ fromJson(env.CONFIG).repository }}"
+    #     IMAGE_TAG="${{ inputs.image-tag }}"
+    #     docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:stable"
+    #     docker push "$IMAGE_NAME:stable"
+
+    - name: Find Cluster by Prefix
+      shell: bash
+      id: cluster
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_REGION: ${{ inputs.aws-region }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
+      run: |
+        CLUSTER_ARN=$(aws ecs list-clusters \
+          --query "clusterArns[?contains(@, '${{ fromJson(env.CONFIG).cluster }}')]" \
+          --output text)
+
+        if [ -z "$CLUSTER_ARN" ]; then
+          echo "No cluster found matching prefix: ${{ fromJson(env.CONFIG).cluster }}"
+          exit 1
+        fi
+
+        echo "Cluster found: $CLUSTER_ARN"
+        echo "CLUSTER_ARN=$CLUSTER_ARN" >> $GITHUB_ENV
+
+    - name: Deploy Services
+      env:
+        AWS_ACCESS_KEY_ID: ${{ inputs.aws-access-key-id }}
+        AWS_REGION: ${{ inputs.aws-region }}
+        AWS_SECRET_ACCESS_KEY: ${{ inputs.aws-secret-access-key }}
+        AWS_SESSION_TOKEN: ${{ inputs.aws-session-token }}
+      shell: bash
+      run: |
+        IFS=',' read -r -a SERVICES <<< "${{ join(fromJson(env.CONFIG).services, ',') }}"
+        for SERVICE_PREFIX in "${SERVICES[@]}"; do
+          SERVICE_ARN=$(aws ecs list-services \
+            --cluster "$CLUSTER_ARN" \
+            --query "serviceArns[?contains(@, '$SERVICE_PREFIX')]" \
+            --output text)
+
+          if [ -z "$SERVICE_ARN" ]; then
+            echo "No service found for prefix: $SERVICE_PREFIX"
+            exit 1
+          fi
+
+          echo "Updating service: $SERVICE_ARN"
+         
+        done

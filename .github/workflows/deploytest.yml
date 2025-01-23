@@ -1,0 +1,34 @@
+name: Deploy Tables API Staging
+
+on:
+  push:
+    branches:
+      - master
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy-tables-api-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Determine Commit SHA
+        id: determine-sha
+        run: |
+          echo ${{ github.sha }}
+
+      - name: Prepare Commit Message
+        run: |
+          echo "SHORT_CURRENT_COMMIT=$(echo '${{ env.SHA }}' | cut -c1-7)" >> $GITHUB_ENV
+          echo "SHORT_MASTER_COMMIT=$(echo '${{ env.SHA }}' | cut -c1-7)" >> $GITHUB_ENV
+        env:
+          SHA: ${{ github.sha }}
+
+      - name: Prepare Commit Message
+        run: |
+          echo 'auto(cloud): Updating Skynet Images from ${{ env.SHORT_CURRENT_COMMIT }} to ${{ env.SHORT_MASTER_COMMIT }}'

@@ -1,0 +1,11 @@
+{
+  "name": "ffmpeg",
+  "version": "1",
+  "description": "Video analysis",
+  "scripts": {
+    "build": "docker build -t ffmpeg1 . && docker run --rm -v \"a:/dev/integration-layers/packages/layers/ffmpeg/dist:/layer\" ffmpeg1"
+  },
+  "dependencies": {
+    "fluent-ffmpeg": "2.1.3"
+  }
+}
