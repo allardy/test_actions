@@ -25,18 +25,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
+      # Fetch `master` branch
+      - name: Fetch Master Branch
+        run: git fetch origin master
+
       # Attempt to Merge Master into Prod
-      - name: Merge Master into Prod
+      - name: Attempt Merge Master to Prod
         id: merge-master-to-prod
         run: |
-          git fetch origin master
-          git merge --no-ff origin/master -m "Deploy Staging to Production" || exit 1
+          echo "Attempting to merge master into prod..."
+          git merge --no-ff origin/master -m "Merge master into prod" || exit 1
 
       # If Merge Fails, Sync Prod to Master and Retry
       - name: Handle Merge Conflict
         if: failure()
         run: |
-          echo "Merge from master to prod failed. Syncing prod to master and retrying..."
+          echo "Merge failed. Syncing prod to master and retrying..."
           git checkout master
           git pull origin master
           git merge --no-ff origin/prod -m "Merge prod into master [skip ci]"
@@ -44,16 +48,26 @@ jobs:
 
           echo "Retrying merge from master to prod..."
           git checkout prod
-          git merge --no-ff origin/master -m "Merge master into prod [skip ci]"
-          git push origin prod
+          git merge --no-ff origin/master -m "Retry: Merge master into prod"
+          git push origin prod || exit 1
 
       # Validate Final Sync
-      - name: Validate Sync
+      - name: Validate Final Sync
         run: |
           git fetch origin prod
           if ! git merge-base --is-ancestor origin/master origin/prod; then
-            echo "Prod is still not fully updated with master. Manual resolution required."
+            echo "Prod is still not fully updated with master. Attempting forced sync as a last resort..."
+            git reset --hard origin/master
+            git push origin prod --force
+          fi
+
+      # Final Verification
+      - name: Final Verification
+        run: |
+          git fetch origin prod
+          if ! git merge-base --is-ancestor origin/master origin/prod; then
+            echo "Prod is still not up-to-date after force sync. Manual resolution required."
             exit 1
           else
-            echo "Prod is successfully updated with master."
+            echo "Prod successfully updated with master."
           fi
