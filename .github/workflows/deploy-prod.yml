@@ -61,6 +61,14 @@ jobs:
             git push origin prod --force
           fi
 
+      - name: Add Final Commit to Prod
+        if: always()
+        run: |
+          echo "Ensuring prod branch has a merge commit for history clarity..."
+          git checkout prod
+          git commit --allow-empty -m "Staging deployed to production [skip ci]"
+          git push origin prod
+
       # Final Verification
       - name: Final Verification
         run: |
