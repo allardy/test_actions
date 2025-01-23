@@ -1,0 +1,68 @@
+name: Merge Master to Prod
+
+on:
+  workflow_dispatch:
+
+jobs:
+  merge-master-to-prod:
+    name: Merge Master into Prod
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      # Checkout the `prod` branch
+      - name: Checkout Prod Branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch full history
+          ref: prod # Start with `prod` branch
+
+      # Configure Git
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      # Fetch the `master` branch
+      - name: Fetch Master
+        run: git fetch origin master
+
+      # Check if Prod is Ahead of Master
+      - name: Check Prod vs Master
+        id: check-divergence
+        run: |
+          git fetch origin prod
+          if ! git merge-base --is-ancestor origin/master prod; then
+            echo "Prod is ahead of master. Syncing prod to master first..."
+            git checkout master
+            git pull origin master
+            git merge --no-ff origin/prod -m "Merge prod into master to sync emergency changes"
+            git push origin master
+          else
+            echo "Prod is up-to-date with master."
+          fi
+
+      # Merge Master into Prod
+      - name: Merge Master into Prod
+        run: |
+          git checkout prod
+          git merge --no-ff origin/master -m "Merge master into prod via GitHub Actions"
+          git push origin prod
+
+      # Validate Final Sync
+      - name: Validate Prod is Up-to-Date
+        run: |
+          git fetch origin prod
+          if ! git merge-base --is-ancestor origin/master origin/prod; then
+            echo "Prod is still behind master. Manual intervention required."
+            exit 1
+          else
+            echo "Prod is successfully updated with master."
+          fi
+
+      # Notify of Success
+      - name: Notify Success
+        if: success()
+        run: echo "Successfully merged master into prod!"
