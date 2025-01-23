@@ -1,9 +1,1 @@
-<<<<<<< HEAD
-bbbbb
-bbbbbbb
-cccccc
-=======
-aaa
-bbbbbbb
->>>>>>> masterccccc
-dddddd
+bbbbbbbbbbbbbb
