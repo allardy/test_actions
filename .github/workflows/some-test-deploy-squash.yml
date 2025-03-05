@@ -30,7 +30,6 @@ jobs:
 
       - name: Squash changes from master into prod
         run: |
-          # 1) Merge (squash) everything from origin/master, preferring "theirs" on conflict
           git merge --squash origin/master -Xtheirs
 
           # 2) Find the last "Production Deploy" commit in prod history
@@ -41,21 +40,20 @@ jobs:
           last_squash_commit=$(git log origin/prod --grep="Production Deploy:" -1 --pretty=format:"%B" \
             | grep -oE '[0-9a-f]{7,40}' \
             | tail -n1)
-
+          echo $last_squash_commit
           if [ -n "$last_squash_commit" ]; then
             # We found a previous deploy
             commit_count=$(git rev-list "$last_squash_commit"..origin/master --count)
             first_commit=$(git rev-list "$last_squash_commit"..origin/master | tail -n1 | cut -c1-7)
           else
+            echo everything
             # No previous deploy found, so deploy everything in master
             commit_count=$(git rev-list origin/master --count)
             first_commit=$(git rev-list origin/master | tail -n1 | cut -c1-7)
           fi
 
-          # 3) Grab the very last commit in master (short)
           last_commit=$(git rev-list origin/master | head -n1 | cut -c1-7)
 
-          # 4) Build the commit message
           {
             echo "Production Deploy: $commit_count commits ($first_commit → $last_commit)"
             echo
