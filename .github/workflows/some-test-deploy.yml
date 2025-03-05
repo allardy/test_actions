@@ -29,6 +29,7 @@ jobs:
           git fetch origin master
           # --no-ff ensures prod gets a brand new commit (SHA) and triggers the prod workflow
           git merge origin/master --no-ff -m "Production merge"
+          git remote set-url origin https://x-access-token:${{ secrets.SECRET }}@github.com/${{ github.repository }}
           git push origin prod
 
       - name: Sync prod back to master (fast-forward only)
