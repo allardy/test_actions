@@ -1,0 +1,38 @@
+name: Trigger Production Deploy FF
+
+on:
+  workflow_dispatch:
+
+jobs:
+  merge-master-to-prod:
+    name: Merge Master into Prod
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout prod branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: prod
+          token: ${{ secrets.SECRET }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge master into prod
+        run: |
+          git fetch origin master
+          git push origin prod --force-with-lease
+
+      - name: Tag master to record production deploy
+        run: |
+          git checkout master
+          git pull origin master
+
+          export TZ="America/New_York"
+          tag_name="deploy-$(date +"%Y-%m-%d_%H-%M-%S")"
+
+          git tag -a "$tag_name" -m "Deployed to production at $(date +"%Y-%m-%d %H:%M:%S")"
+          git push origin --tags
