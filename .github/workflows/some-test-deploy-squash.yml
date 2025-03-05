@@ -31,7 +31,7 @@ jobs:
       - name: Squash changes from master into prod
         run: |
           # Merge (squash) everything from origin/master
-          git merge --squash origin/master
+          git merge --squash origin/master -Xtheirs
 
           # Prepare a commit message that lists the commits being squashed.
           # HEAD..origin/master covers commits on master that aren't in prod yet.
