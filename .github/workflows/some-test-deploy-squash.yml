@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+          ref: prod
           token: ${{ secrets.SECRET }}
 
       - name: Configure Git
@@ -24,66 +25,48 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Fetch all branches & tags
-        run: |
-          git fetch --prune --unshallow || true
-          git fetch --tags
-          git fetch origin master prod
-
-      - name: Determine commit range for deploy
-        id: range
-        run: |
-          # We'll use a tag called "prod-latest" to mark the last master commit we already deployed
-          TAG_NAME="prod-latest"
-
-          # If prod-latest doesn't exist yet, default to the very first commit on master
-          if git rev-parse -q --verify "origin/${TAG_NAME}" >/dev/null; then
-            START_REF="origin/${TAG_NAME}"
-          else
-            echo "prod-latest tag not found; using first commit on master"
-            START_REF="$(git rev-list --max-parents=0 origin/master | tail -n1)"
-          fi
-
-          # Count commits in START_REF..origin/master
-          COMMIT_COUNT="$(git rev-list "${START_REF}"..origin/master --count)"
-          FIRST_COMMIT="$(git rev-list "${START_REF}"..origin/master | tail -n1 | cut -c1-7)"
-          LAST_COMMIT="$(git rev-list "${START_REF}"..origin/master | head -n1 | cut -c1-7)"
-
-          # Output them so we can re-use below
-          echo "commit_count=${COMMIT_COUNT}" >> $GITHUB_OUTPUT
-          echo "first_commit=${FIRST_COMMIT}" >> $GITHUB_OUTPUT
-          echo "last_commit=${LAST_COMMIT}" >> $GITHUB_OUTPUT
+      - name: Fetch master branch
+        run: git fetch origin master
 
       - name: Squash changes from master into prod
         run: |
-          # Check out prod branch
-          git checkout prod
-
-          # Merge (squash) everything from origin/master, preferring "theirs" on conflict
+          # 1) Merge (squash) everything from origin/master, preferring "theirs" on conflict
           git merge --squash origin/master -Xtheirs
 
-          # Build the commit message
-          cat <<EOF > /tmp/commitmsg
-          Production Deploy: ${COMMIT_COUNT} commits (${FIRST_COMMIT} → ${LAST_COMMIT})
+          # 2) Find the last "Production Deploy" commit in prod history
+          #    We'll grep its message for the final hash. 
+          #    Example commit message line:
+          #      "Production Deploy: 8 commits (abc1234 → def5678)"
+          #    So let's grab the second hash: "def5678"
+          last_squash_commit=$(git log origin/prod --grep="Production Deploy:" -1 --pretty=format:"%B" \
+            | grep -oE '[0-9a-f]{7,40}' \
+            | tail -n1)
 
-          Included commits:
-          EOF
-          # Append a one-line summary for each commit
-          git log HEAD..origin/master --pretty=format:"- %h %s" >> /tmp/commitmsg
+          if [ -n "$last_squash_commit" ]; then
+            # We found a previous deploy
+            commit_count=$(git rev-list "$last_squash_commit"..origin/master --count)
+            first_commit=$(git rev-list "$last_squash_commit"..origin/master | tail -n1 | cut -c1-7)
+          else
+            # No previous deploy found, so deploy everything in master
+            commit_count=$(git rev-list origin/master --count)
+            first_commit=$(git rev-list origin/master | tail -n1 | cut -c1-7)
+          fi
 
-          # Create the single squash commit
+          # 3) Grab the very last commit in master (short)
+          last_commit=$(git rev-list origin/master | head -n1 | cut -c1-7)
+
+          # 4) Build the commit message
+          {
+            echo "Production Deploy: $commit_count commits ($first_commit → $last_commit)"
+            echo
+            echo "Included commits:"
+            # Show the list of commits from HEAD..origin/master
+            git log HEAD..origin/master --pretty=format:"- %h %s"
+          } > /tmp/commitmsg
+
+          # 5) Create the single squash commit
           git commit -F /tmp/commitmsg
 
       - name: Push new squash commit to prod
         run: |
           git push origin prod --force-with-lease
-
-      - name: Update the prod-latest tag on master
-        run: |
-          # Tag the HEAD of origin/master as the new "prod-latest".
-          # So next time, we know exactly up to which commit we've deployed.
-          TAG_NAME="prod-latest"
-          git checkout master
-          git merge --ff-only origin/master
-          git tag -f "${TAG_NAME}"
-          git push origin "refs/tags/${TAG_NAME}" --force
