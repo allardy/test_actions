@@ -25,38 +25,52 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Fetch master branch
-        run: git fetch origin master
+      - name: Fetch all branches & tags
+        run: |
+          git fetch --prune --unshallow || true
+          git fetch --tags
+          git fetch origin master prod
+
+      - name: Determine commit range for deploy
+        id: range
+        run: |
+          # We'll use a tag called "prod-latest" to mark the last master commit we already deployed
+          TAG_NAME="prod-latest"
+
+          # If prod-latest doesn't exist yet, default to the very first commit on master
+          if git rev-parse -q --verify "origin/${TAG_NAME}" >/dev/null; then
+            START_REF="origin/${TAG_NAME}"
+          else
+            echo "prod-latest tag not found; using first commit on master"
+            START_REF="$(git rev-list --max-parents=0 origin/master | tail -n1)"
+          fi
+
+          # Count commits in START_REF..origin/master
+          COMMIT_COUNT="$(git rev-list "${START_REF}"..origin/master --count)"
+          FIRST_COMMIT="$(git rev-list "${START_REF}"..origin/master | tail -n1 | cut -c1-7)"
+          LAST_COMMIT="$(git rev-list "${START_REF}"..origin/master | head -n1 | cut -c1-7)"
+
+          # Output them so we can re-use below
+          echo "commit_count=${COMMIT_COUNT}" >> $GITHUB_OUTPUT
+          echo "first_commit=${FIRST_COMMIT}" >> $GITHUB_OUTPUT
+          echo "last_commit=${LAST_COMMIT}" >> $GITHUB_OUTPUT
 
       - name: Squash changes from master into prod
         run: |
-          # Merge (squash) everything from origin/master,
-          # preferring "theirs" on conflict
+          # Check out prod branch
+          git checkout prod
+
+          # Merge (squash) everything from origin/master, preferring "theirs" on conflict
           git merge --squash origin/master -Xtheirs
 
-          last_squash_commit=$(git log origin/prod --grep="Production Deploy:" --pretty=format:"%H" -n 1)
-          echo $last_squash_commit
-          # Determine the commit range from that last squash commit to master
-          if [ -n "$last_squash_commit" ]; then
-            commit_count=$(git rev-list $last_squash_commit..origin/master --count)
-            first_commit=$(git rev-list $last_squash_commit..origin/master | tail -n 1 | cut -c1-7)
-          else
-            echo evethign
-            # If no previous squash commit is found, assume deploying everything
-            commit_count=$(git rev-list origin/master --count)
-            first_commit=$(git rev-list origin/master | tail -n 1 | cut -c1-7)
-          fi
+          # Build the commit message
+          cat <<EOF > /tmp/commitmsg
+          Production Deploy: ${COMMIT_COUNT} commits (${FIRST_COMMIT} → ${LAST_COMMIT})
 
-          # The last commit in master
-          last_commit=$(git rev-list origin/master | head -n 1 | cut -c1-7)
-
-          # Start the commit message
-          {
-            echo "Production Deploy: $commit_count commits ($first_commit → $last_commit)"
-            echo
-            echo "Included commits:"
-            git log HEAD..origin/master --pretty=format:"- %h %s"
-          } > /tmp/commitmsg
+          Included commits:
+          EOF
+          # Append a one-line summary for each commit
+          git log HEAD..origin/master --pretty=format:"- %h %s" >> /tmp/commitmsg
 
           # Create the single squash commit
           git commit -F /tmp/commitmsg
@@ -64,3 +78,13 @@ jobs:
       - name: Push new squash commit to prod
         run: |
           git push origin prod --force-with-lease
+
+      - name: Update the prod-latest tag on master
+        run: |
+          # Tag the HEAD of origin/master as the new "prod-latest".
+          # So next time, we know exactly up to which commit we've deployed.
+          TAG_NAME="prod-latest"
+          git checkout master
+          git merge --ff-only origin/master
+          git tag -f "${TAG_NAME}"
+          git push origin "refs/tags/${TAG_NAME}" --force
