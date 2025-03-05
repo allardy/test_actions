@@ -32,15 +32,10 @@ jobs:
         run: |
           git merge --squash origin/master -Xtheirs
 
-          # 2) Find the last "Production Deploy" commit in prod history
-          #    We'll grep its message for the final hash. 
-          #    Example commit message line:
-          #      "Production Deploy: 8 commits (abc1234 → def5678)"
-          #    So let's grab the second hash: "def5678"
           last_squash_commit=$(git log origin/prod --grep="Production Deploy:" -1 --pretty=format:"%B" \
-            | grep -oE '[0-9a-f]{7,40}' \
-            | tail -n1)
-          echo $last_squash_commit
+            | grep -oP '(?<=→ )\b[0-9a-f]{7,40}\b' \
+            | head -n1)
+            
           if [ -n "$last_squash_commit" ]; then
             # We found a previous deploy
             commit_count=$(git rev-list "$last_squash_commit"..origin/master --count)
