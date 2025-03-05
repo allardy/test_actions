@@ -37,14 +37,13 @@ jobs:
             | head -n1)
             
           if [ -n "$last_squash_commit" ]; then
-            # We found a previous deploy
             commit_count=$(git rev-list "$last_squash_commit"..origin/master --count)
             first_commit=$(git rev-list "$last_squash_commit"..origin/master | tail -n1 | cut -c1-7)
+            commit_range="$last_squash_commit..origin/master"
           else
-            echo everything
-            # No previous deploy found, so deploy everything in master
             commit_count=$(git rev-list origin/master --count)
             first_commit=$(git rev-list origin/master | tail -n1 | cut -c1-7)
+            commit_range="origin/master"
           fi
 
           last_commit=$(git rev-list origin/master | head -n1 | cut -c1-7)
@@ -53,8 +52,8 @@ jobs:
             echo "Production Deploy: $commit_count commits ($first_commit → $last_commit)"
             echo
             echo "Included commits:"
-            # Show the list of commits from HEAD..origin/master
-            git log HEAD..origin/master --pretty=format:"- %h %s"
+
+            git log "$commit_range" --pretty=format:"- %h %s"
           } > /tmp/commitmsg
 
           # 5) Create the single squash commit
