@@ -30,13 +30,24 @@ jobs:
 
       - name: Squash changes from master into prod
         run: |
-          # Merge (squash) everything from origin/master
+          # Merge (squash) everything from origin/master,
+          # preferring "theirs" on conflict
           git merge --squash origin/master -Xtheirs
 
-          # Prepare a commit message that lists the commits being squashed.
-          # HEAD..origin/master covers commits on master that aren't in prod yet.
-          echo "Production Deploy - includes the following commits from master:" > /tmp/commitmsg
-          git log HEAD..origin/master --pretty=format:"- %h %s" >> /tmp/commitmsg
+          # Gather commit info for HEAD..origin/master
+          commit_count=$(git rev-list HEAD..origin/master --count)
+          first_commit=$(git log HEAD..origin/master --reverse --pretty=format:"%h" | head -n 1)
+          last_commit=$(git log HEAD..origin/master --pretty=format:"%h" | head -n 1)
+
+          # Start the commit message
+          {
+            echo "Production Deploy"
+            echo "Total commits included: $commit_count"
+            echo "From $first_commit to $last_commit"
+            echo
+            echo "Included commits:"
+            git log HEAD..origin/master --pretty=format:"- %h %s"
+          } > /tmp/commitmsg
 
           # Create the single squash commit
           git commit -F /tmp/commitmsg
