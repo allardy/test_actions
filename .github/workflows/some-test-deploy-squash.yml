@@ -36,14 +36,12 @@ jobs:
 
           # Gather commit info for HEAD..origin/master
           commit_count=$(git rev-list HEAD..origin/master --count)
-          first_commit=$(git log HEAD..origin/master --reverse --pretty=format:"%h" | head -n 1)
-          last_commit=$(git log HEAD..origin/master --pretty=format:"%h" | head -n 1)
+          first_commit=$(git rev-list HEAD..origin/master | tail -n 1 | cut -c1-7)
+          last_commit=$(git rev-list HEAD..origin/master | head -n 1 | cut -c1-7)
 
           # Start the commit message
           {
-            echo "Production Deploy - $commit_count commits. $first_commit ... $last_commit"
-            echo "Total commits included: $commit_count"
-            echo "From $first_commit to $last_commit"
+            echo "Production Deploy: $commit_count commits ($first_commit → $last_commit)"
             echo
             echo "Included commits:"
             git log HEAD..origin/master --pretty=format:"- %h %s"
