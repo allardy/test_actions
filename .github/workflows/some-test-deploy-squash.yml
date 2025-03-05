@@ -35,12 +35,13 @@ jobs:
           git merge --squash origin/master -Xtheirs
 
           last_squash_commit=$(git log origin/prod --grep="Production Deploy:" --pretty=format:"%H" -n 1)
-
+          echo $last_squash_commit
           # Determine the commit range from that last squash commit to master
           if [ -n "$last_squash_commit" ]; then
             commit_count=$(git rev-list $last_squash_commit..origin/master --count)
             first_commit=$(git rev-list $last_squash_commit..origin/master | tail -n 1 | cut -c1-7)
           else
+            echo evethign
             # If no previous squash commit is found, assume deploying everything
             commit_count=$(git rev-list origin/master --count)
             first_commit=$(git rev-list origin/master | tail -n 1 | cut -c1-7)
