@@ -41,7 +41,7 @@ jobs:
 
           # Start the commit message
           {
-            echo "Production Deploy"
+            echo "Production Deploy - $commit_count commits. $first_commit ... $last_commit"
             echo "Total commits included: $commit_count"
             echo "From $first_commit to $last_commit"
             echo
