@@ -1,0 +1,39 @@
+name: Trigger Production Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  merge-master-to-prod:
+    name: Merge Master into Prod
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout prod branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: prod
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge master into prod
+        run: |
+          git fetch origin master
+          # --no-ff ensures prod gets a brand new commit (SHA) and triggers the prod workflow
+          git merge origin/master --no-ff -m "Production merge"
+          git push origin prod
+
+      - name: Sync prod back to master (fast-forward only)
+        run: |
+          git checkout master
+          git fetch origin prod
+          git merge --ff-only origin/prod
+          git push origin master
