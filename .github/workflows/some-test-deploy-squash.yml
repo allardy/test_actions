@@ -1,0 +1,45 @@
+name: Trigger Production Deploy Squash
+
+on:
+  workflow_dispatch:
+
+jobs:
+  merge-master-to-prod:
+    name: Squash Master into Prod
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout prod branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: prod
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch master branch
+        run: git fetch origin master
+
+      - name: Squash changes from master into prod
+        run: |
+          # Merge (squash) everything from origin/master
+          git merge --squash origin/master
+
+          # Prepare a commit message that lists the commits being squashed.
+          # HEAD..origin/master covers commits on master that aren't in prod yet.
+          echo "Production Deploy - includes the following commits from master:" > /tmp/commitmsg
+          git log HEAD..origin/master --pretty=format:"- %h %s" >> /tmp/commitmsg
+
+          # Create the single squash commit
+          git commit -F /tmp/commitmsg
+
+      - name: Push new squash commit to prod
+        run: |
+          git push origin prod --force-with-lease
