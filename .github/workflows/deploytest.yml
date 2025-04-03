@@ -23,11 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branchOrCommit }}
 
       - name: Determine Commit SHA
         id: determine-sha
         run: |
-          echo ${{ github.sha }}
+          echo ${{ inputs.branchOrCommit }}
 
       - name: Prepare Commit Message
         run: |
