@@ -13,6 +13,10 @@ on:
         type: boolean
         default: false
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   trigger:
     runs-on: ubuntu-latest
@@ -23,9 +27,35 @@ jobs:
 
     steps:
       - name: Checkout prod branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ env.SELECTED_REF }}
+
+      - name: Fetch all tags
+        run: git fetch --tags
+
+      - name: Get latest prod tag
+        id: get_latest_tag
+        run: |
+          TAG_PREFIX=prod-
+          # Get the latest numeric tag or fallback to 0
+          latest=$(git tag --list "${TAG_PREFIX}*" | sort -V | tail -n1)
+          if [[ -z "$latest" ]]; then
+            echo "latest_num=0" >> $GITHUB_OUTPUT
+          else
+            num="${latest#$TAG_PREFIX}"
+            echo "latest_num=$num" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push new tag
+        run: |
+          TAG_PREFIX=prod-
+          new_num=$(printf "%04d" $(( ${{ steps.get_latest_tag.outputs.latest_num }} + 1 )))
+          new_tag="${TAG_PREFIX}${new_num}"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag "$new_tag" ${{ env.SELECTED_REF }}
+          git push origin "$new_tag"
 
       - name: Trigger Workflow 1
         run: |
