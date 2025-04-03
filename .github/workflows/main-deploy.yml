@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Trigger Workflow 1
         run: |
-          gh workflow run deploytest.yml
+          gh workflow run deploytest.yml --repo allardy/test_actions
 
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
