@@ -35,6 +35,7 @@ jobs:
 
       - name: Create and push new date-based tag
         run: |
+          echo ${{ env.SELECTED_REF }}
           export TZ="America/New_York"
           tag_name="deploy-$(date +"%Y-%m-%d_%H-%M-%S")"
           git config user.name "github-actions"
