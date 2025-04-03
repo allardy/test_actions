@@ -12,16 +12,20 @@ on:
         description: 'Branch or commit SHA to deploy'
         required: false
         type: string
-        default: master
 
 jobs:
   trigger:
     runs-on: ubuntu-latest
+
+    env:
+      SELECTED_REF: ${{ inputs.branchOrCommit != '' && inputs.branchOrCommit || github.sha }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
       - name: Checkout prod branch
         uses: actions/checkout@v3
         with:
-          ref: ${{ inputs.branchOrCommit }}
+          ref: ${{ env.SELECTED_REF }}
 
       - name: Trigger Workflow 1
         run: |
@@ -29,6 +33,3 @@ jobs:
            --ref ${{ inputs.branchOrCommit }} \
            --field skipDeploy=${{ inputs.skipDeploy }} \
            --field branchOrCommit=${{ inputs.branchOrCommit }}
-
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
