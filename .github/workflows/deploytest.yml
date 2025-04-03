@@ -2,6 +2,17 @@ name: Deploy test
 
 on:
   workflow_dispatch:
+    inputs:
+      skipDeploy:
+        description: 'Skip deployment to ECS (only updates the image)'
+        required: false
+        type: boolean
+        default: false
+      branchOrCommit:
+        description: 'Branch or commit SHA to deploy'
+        required: false
+        type: string
+        default: master
 
 permissions:
   id-token: write
