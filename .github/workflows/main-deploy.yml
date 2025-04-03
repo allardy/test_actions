@@ -2,6 +2,17 @@ name: Trigger All Workflows
 
 on:
   workflow_dispatch:
+    inputs:
+      skipDeploy:
+        description: 'Skip deployment to ECS (only updates the image)'
+        required: false
+        type: boolean
+        default: false
+      branchOrCommit:
+        description: 'Branch or commit SHA to deploy'
+        required: false
+        type: string
+        default: master
 
 jobs:
   trigger:
@@ -10,10 +21,15 @@ jobs:
       - name: Checkout prod branch
         uses: actions/checkout@v3
         with:
-          ref: master
+          ref: ${{ inputs.branchOrCommit }}
+
       - name: Trigger Workflow 1
         run: |
-          gh workflow run deploytest.yml --repo allardy/test_actions
+          gh workflow run deploytest.yml \
+           --repo allardy/test_actions \
+           --ref ${{ inputs.branchOrCommit }} \
+           --field skipDeploy=${{ inputs.skipDeploy }} \
+           --field branchOrCommit=${{ inputs.branchOrCommit }}
 
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
