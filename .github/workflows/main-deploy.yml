@@ -7,6 +7,10 @@ jobs:
   trigger:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout prod branch
+        uses: actions/checkout@v3
+        with:
+          ref: master
       - name: Trigger Workflow 1
         run: |
           gh workflow run deploytest.yml --repo allardy/test_actions
