@@ -1,18 +1,17 @@
-name: Deploy test
+name: Deploy Table staging
 
 on:
   workflow_dispatch:
     inputs:
-      skipDeploy:
-        description: 'Skip deployment to ECS (only updates the image)'
-        required: false
-        type: boolean
-        default: false
       branchOrCommit:
         description: 'Branch or commit SHA to deploy'
         required: false
         type: string
-        default: master
+      skipDeploy:
+        description: 'Skip deployment to ECS'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   id-token: write
@@ -21,6 +20,10 @@ permissions:
 jobs:
   deploy-tables-api-staging:
     runs-on: ubuntu-latest
+
+    env:
+      SELECTED_REF: ${{ inputs.branchOrCommit != '' && inputs.branchOrCommit || github.sha }}
+
     steps:
       - uses: actions/checkout@v4
         with:
