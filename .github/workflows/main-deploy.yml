@@ -30,6 +30,6 @@ jobs:
       - name: Trigger Workflow 1
         run: |
           gh workflow run deploytest.yml \
-           --ref ${{ inputs.branchOrCommit }} \
+           --ref ${{ env.SELECTED_REF }} \
            --field skipDeploy=${{ inputs.skipDeploy }} \
-           --field branchOrCommit=${{ inputs.branchOrCommit }}
+           --field branchOrCommit=${{ env.SELECTED_REF }}
