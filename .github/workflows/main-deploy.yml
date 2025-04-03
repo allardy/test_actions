@@ -17,7 +17,6 @@ permissions:
   id-token: write
   contents: write
   actions: write
-  workflows: write
 
 jobs:
   trigger:
