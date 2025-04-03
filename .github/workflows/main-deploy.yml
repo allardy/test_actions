@@ -32,28 +32,28 @@ jobs:
         with:
           ref: ${{ env.SELECTED_REF }}
 
-      - name: Fetch all tags
-        run: git fetch --tags
+      # - name: Fetch all tags
+      #   run: git fetch --tags
 
-      - name: Get latest prod tag
-        id: get_latest_tag
-        run: |
-          latest=$(git tag --list "${TAG_PREFIX}[0-9]*" | sort -V | tail -n1)
-          if [[ -z "$latest" ]]; then
-            echo "latest_num=0" >> $GITHUB_OUTPUT
-          else
-            num="${latest#$TAG_PREFIX}"
-            echo "latest_num=$num" >> $GITHUB_OUTPUT
-          fi
+      # - name: Get latest prod tag
+      #   id: get_latest_tag
+      #   run: |
+      #     latest=$(git tag --list "${TAG_PREFIX}[0-9]*" | sort -V | tail -n1)
+      #     if [[ -z "$latest" ]]; then
+      #       echo "latest_num=0" >> $GITHUB_OUTPUT
+      #     else
+      #       num="${latest#$TAG_PREFIX}"
+      #       echo "latest_num=$num" >> $GITHUB_OUTPUT
+      #     fi
 
-      - name: Create and push new tag
-        run: |
-          new_num=$(printf "%04d" $(( ${{ steps.get_latest_tag.outputs.latest_num }} + 1 )))
-          new_tag="${TAG_PREFIX}${new_num}"
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git tag "$new_tag" ${{ env.SELECTED_REF }}
-          git push origin "$new_tag"
+      # - name: Create and push new tag
+      #   run: |
+      #     new_num=$(printf "%04d" $(( ${{ steps.get_latest_tag.outputs.latest_num }} + 1 )))
+      #     new_tag="${TAG_PREFIX}${new_num}"
+      #     git config user.name "github-actions"
+      #     git config user.email "github-actions@github.com"
+      #     git tag "$new_tag" ${{ env.SELECTED_REF }}
+      #     git push origin "$new_tag"
 
       - name: Trigger Workflow 1
         run: |
