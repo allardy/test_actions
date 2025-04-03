@@ -119,8 +119,8 @@ async function analyzeLog(filePath) {
       }
     }
   }
+  sdfsdfsdfs
   sdfsdf
-
   for await (const line of rl) {
     // Does this line indicate a new log entry?
     const isNewEntry = LOG_ENTRY_REGEX.test(line)
