@@ -26,7 +26,6 @@ jobs:
       - name: Trigger Workflow 1
         run: |
           gh workflow run deploytest.yml \
-           --repo allardy/test_actions \
            --ref ${{ inputs.branchOrCommit }} \
            --field skipDeploy=${{ inputs.skipDeploy }} \
            --field branchOrCommit=${{ inputs.branchOrCommit }}
