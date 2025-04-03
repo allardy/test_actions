@@ -24,6 +24,7 @@ jobs:
     env:
       SELECTED_REF: ${{ inputs.branchOrCommit != '' && inputs.branchOrCommit || github.sha }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG_PREFIX: prod-
 
     steps:
       - name: Checkout prod branch
@@ -37,9 +38,7 @@ jobs:
       - name: Get latest prod tag
         id: get_latest_tag
         run: |
-          TAG_PREFIX=prod-
-          # Get the latest numeric tag or fallback to 0
-          latest=$(git tag --list "${TAG_PREFIX}*" | sort -V | tail -n1)
+          latest=$(git tag --list "${TAG_PREFIX}[0-9]*" | sort -V | tail -n1)
           if [[ -z "$latest" ]]; then
             echo "latest_num=0" >> $GITHUB_OUTPUT
           else
@@ -49,7 +48,6 @@ jobs:
 
       - name: Create and push new tag
         run: |
-          TAG_PREFIX=prod-
           new_num=$(printf "%04d" $(( ${{ steps.get_latest_tag.outputs.latest_num }} + 1 )))
           new_tag="${TAG_PREFIX}${new_num}"
           git config user.name "github-actions"
