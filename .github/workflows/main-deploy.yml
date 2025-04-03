@@ -48,7 +48,6 @@ jobs:
 
       - name: Trigger Workflow 1
         run: |
-          gh workflow run deploytest.yml \
-           --ref master \
-           --field skipDeploy=${{ inputs.skipDeploy }} \
-           --field branchOrCommit=${{ steps.commit.outputs.sha }}
+          gh workflow run deploytest.yml --ref master --field skipDeploy=${{ inputs.skipDeploy }} --field branchOrCommit=${{ steps.commit.outputs.sha }}
+          gh workflow run deploytest.yml --ref master --field skipDeploy=${{ inputs.skipDeploy }} --field branchOrCommit=${{ steps.commit.outputs.sha }}
+          gh workflow run deploytest.yml --ref master --field skipDeploy=${{ inputs.skipDeploy }} --field branchOrCommit=${{ steps.commit.outputs.sha }}
