@@ -7,6 +7,7 @@ on:
         description: 'Branch or commit SHA to deploy'
         required: false
         type: string
+        default: 'master'
       skipDeploy:
         description: 'Skip deployment to ECS'
         required: false
@@ -23,24 +24,26 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SELECTED_REF: ${{ inputs.branchOrCommit != '' && inputs.branchOrCommit || github.sha }}
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      TAG_PREFIX: prod-
 
     steps:
       - name: Checkout prod branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ env.SELECTED_REF }}
+          ref: ${{ inputs.branchOrCommit }}
+
+      - name: Get checked out commit SHA
+        id: commit
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Create and push new date-based tag
         run: |
-          echo ${{ env.SELECTED_REF }}
+          echo ${{ steps.commit.outputs.sha }}
           export TZ="America/New_York"
           tag_name="deploy-$(date +"%Y-%m-%d_%H-%M-%S")"
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git tag "$tag_name" ${{ env.SELECTED_REF }}
+          git tag "$tag_name" ${{ steps.commit.outputs.sha }}
           git push origin "$tag_name"
 
       - name: Trigger Workflow 1
@@ -48,4 +51,4 @@ jobs:
           gh workflow run deploytest.yml \
            --ref master \
            --field skipDeploy=${{ inputs.skipDeploy }} \
-           --field branchOrCommit=${{ env.SELECTED_REF }}
+           --field branchOrCommit=${{ steps.commit.outputs.sha }}
