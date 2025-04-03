@@ -35,11 +35,12 @@ jobs:
 
       - name: Create and push new date-based tag
         run: |
-          new_tag="prod-$(date -u '+%Y-%m-%d_%H-%M')"
+          export TZ="America/New_York"
+          tag_name="deploy-$(date +"%Y-%m-%d_%H-%M-%S")"
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git tag "$new_tag" ${{ env.SELECTED_REF }}
-          git push origin "$new_tag"
+          git tag "$tag_name" ${{ env.SELECTED_REF }}
+          git push origin "$tag_name"
 
       - name: Trigger Workflow 1
         run: |
