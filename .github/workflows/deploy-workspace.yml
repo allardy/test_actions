@@ -29,6 +29,7 @@ jobs:
       - run: echo "Check images"
 
   deploy:
+    if: always()
     needs: check-docker-images-existence
     runs-on: ubuntu-latest
     steps:
