@@ -21,6 +21,7 @@ permissions:
 env:
   ACTIONS_RUNNER_DEBUG: true
   ACTIONS_STEP_DEBUG: true
+  GIT_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.branchOrCommit || github.sha }}
 
 concurrency: deploy-cloud-staging
 
@@ -34,12 +35,7 @@ jobs:
   deploy-staging:
     needs: ci
     if: needs.ci.result == 'success' || needs.ci.result == 'skipped'
-    runs-on: ubuntu-latest
-    steps:
-      - run: |
-          echo "Starting deploy staging..."
-          sleep 25  # give you time to cancel manually
-          echo "Finished deploy"
+    uses: ./.github/workflows/deploy-workspace.yml
 
   check-staging:
     needs: deploy-staging

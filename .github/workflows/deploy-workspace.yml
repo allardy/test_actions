@@ -1,0 +1,41 @@
+name: Deploy Workspace
+
+on:
+  workflow_call:
+    inputs:
+      check-docker-images-existence:
+        description: 'Whether to check docker images existence'
+        type: boolean
+        required: false
+        default: true
+      branchOrCommit:
+        description: 'Branch/Commit/Tag to deploy'
+        required: false
+        type: string
+        default: 'master'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ACTIONS_RUNNER_DEBUG: true
+
+jobs:
+  check-docker-images-existence:
+    if: inputs.check-docker-images-existence
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Check images"
+    with:
+      branchOrCommit: ${{ inputs.branchOrCommit || github.sha }}
+
+  deploy:
+    needs: check-docker-images-existence
+    if: needs.check-docker-images-existence.result == 'success' || needs.check-docker-images-existence.result == 'skipped'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Starting deploy staging..."
+          sleep 25  # give you time to cancel manually
+          echo "Finished deploy"
