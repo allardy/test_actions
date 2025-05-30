@@ -30,7 +30,7 @@ jobs:
 
   deploy:
     needs: check-docker-images-existence
-    if: needs.check-docker-images-existence.result == 'success' || needs.check-docker-images-existence.result == 'skipped'
+    if: !needs.check-docker-images-existence || (needs.check-docker-images-existence.result == 'success' || needs.check-docker-images-existence.result == 'skipped')
     runs-on: ubuntu-latest
     steps:
       - run: |
