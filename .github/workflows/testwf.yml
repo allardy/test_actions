@@ -26,7 +26,9 @@ concurrency: deploy-cloud-staging
 jobs:
   ci:
     if: github.event_name != 'workflow_dispatch' || github.event.inputs.skip_ci != 'true'
-    uses: ./.github/workflows/main-deploy.yml
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI"
 
   ci-skipped:
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_ci == 'true' }}
