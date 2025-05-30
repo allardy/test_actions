@@ -1,0 +1,29 @@
+name: CI
+on:
+  pull_request:
+
+  workflow_call:
+    inputs:
+      branchOrCommit:
+        description: 'Branch/Commit/Tag'
+        required: false
+        type: string
+        default: 'master'
+      skipCI:
+        description: 'Whether to skip CI'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+  lint:
+    if: github.event_name != 'workflow_call' || !inputs.skipCI
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI"
+      - run: sleep 10
