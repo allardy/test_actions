@@ -55,7 +55,8 @@ jobs:
       - run: echo "Check staging"
 
   cancel-stack:
-    if: always() && cancelled()
+    needs: deploy-staging
+    if: cancelled()
     runs-on: ubuntu-latest
     steps:
       - run: echo "Cancelling stack"
