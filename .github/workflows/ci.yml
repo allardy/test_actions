@@ -14,6 +14,12 @@ on:
         default: 'false'
 
 jobs:
+  skip-detector:
+    if: inputs.skip == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Skipping CI via input"
+
   format:
     if: inputs.skip != 'true'
     runs-on: ubuntu-latest
