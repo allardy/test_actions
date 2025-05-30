@@ -1,0 +1,54 @@
+name: Deploy Cloud New
+
+on:
+  workflow_dispatch:
+    inputs:
+      skip_ci:
+        description: 'Skip CI and deploy directly'
+        type: boolean
+        required: false
+        default: false
+
+  push:
+    branches:
+      - master
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ACTIONS_RUNNER_DEBUG: true
+  ACTIONS_STEP_DEBUG: true
+
+concurrency: deploy-cloud-staging
+
+jobs:
+  ci:
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.skip_ci != 'true'
+    uses: ./.github/workflows/main-deploy.yml
+
+  ci-skipped:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_ci == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI was skipped by user input"
+
+  deploy-staging:
+    needs: [ci, ci-skipped]
+    if: always() &&  ${{ needs.ci.result == 'success' || needs.ci-skipped.result == 'success' }}
+    steps:
+      - run: echo "Deploy staging staging"
+
+  check-staging:
+    needs: deploy-staging
+    if: needs.deploy-staging.result == 'success'
+    steps:
+      - run: echo "Check staging"
+
+  cancel-stack:
+    if: cancelled()
+    runs-on: ubuntu-latest
+    steps:
+      steps:
+        - run: echo "Cancelling stack"
