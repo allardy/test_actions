@@ -15,7 +15,7 @@ on:
 
 jobs:
   format:
-    if: github.event_name != 'workflow_call' || inputs.skip != 'true'
+    if: inputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
       - run: echo "Skip ${{ inputs.branchOrCommit }}"
 
   lint:
-    if: github.event_name != 'workflow_call' || inputs.skip != 'true'
+    if: inputs.skip != 'true'
     runs-on: ubuntu-latest
     steps:
       - run: echo "CI"
