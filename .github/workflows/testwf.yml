@@ -38,14 +38,14 @@ jobs:
 
   deploy-staging:
     needs: [ci, ci-skipped]
-    if: always() && needs.ci.result == 'success'
+    if: always() && ${{ needs.ci.result == 'success' || needs.ci-skipped.result == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploy staging staging"
 
   check-staging:
     needs: deploy-staging
-    if: needs.deploy-staging.result == 'success'
+    if: always() && needs.deploy-staging.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - run: echo "Check staging"
