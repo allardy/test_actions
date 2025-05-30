@@ -33,7 +33,7 @@ jobs:
     uses: ./.github/workflows/ci.yml
     with:
       branchOrCommit: ${{ inputs.branchOrCommit || github.sha }}
-      skip: ${{ inputs.skip_ci == 'true' }}
+      skip: ${{ inputs.skip_ci }}
 
   deploy-staging:
     needs: ci
