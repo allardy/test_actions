@@ -29,6 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "CI"
+      - run: sleep 10
 
   ci-skipped:
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_ci == 'true' }}
@@ -41,7 +42,10 @@ jobs:
     if: always() && (needs.ci.result == 'success' || needs.ci-skipped.result == 'success')
     runs-on: ubuntu-latest
     steps:
-      - run: echo "Deploy staging staging"
+      - run: |
+          echo "Starting deploy staging..."
+          sleep 300  # give you time to cancel manually
+          echo "Finished deploy"
 
   check-staging:
     needs: deploy-staging
