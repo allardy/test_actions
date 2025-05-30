@@ -52,5 +52,4 @@ jobs:
     if: cancelled()
     runs-on: ubuntu-latest
     steps:
-      steps:
-        - run: echo "Cancelling stack"
+      - run: echo "Cancelling stack"
