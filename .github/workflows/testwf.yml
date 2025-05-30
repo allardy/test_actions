@@ -24,22 +24,22 @@ env:
 concurrency: deploy-cloud-staging
 
 jobs:
-  ci:
-    if: github.event_name != 'workflow_dispatch' || github.event.inputs.skip_ci != 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "CI"
-      - run: sleep 10
+  # ci:
+  #   if: github.event_name != 'workflow_dispatch' || github.event.inputs.skip_ci != 'true'
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo "CI"
+  #     - run: sleep 10
 
-  ci-skipped:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_ci == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "CI was skipped by user input"
+  # ci-skipped:
+  #   if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.skip_ci == 'true' }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo "CI was skipped by user input"
 
   deploy-staging:
-    needs: [ci, ci-skipped]
-    if: always() && (needs.ci.result == 'success' || needs.ci-skipped.result == 'success')
+    # needs: [ci, ci-skipped]
+    # if: always() && (needs.ci.result == 'success' || needs.ci-skipped.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - run: |
@@ -49,7 +49,7 @@ jobs:
 
   check-staging:
     needs: deploy-staging
-    if: always() && needs.deploy-staging.result == 'success'
+    if: needs.deploy-staging.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - run: echo "Check staging"
