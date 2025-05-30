@@ -27,8 +27,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: echo "Check images"
-    with:
-      branchOrCommit: ${{ inputs.branchOrCommit || github.sha }}
 
   deploy:
     needs: check-docker-images-existence
