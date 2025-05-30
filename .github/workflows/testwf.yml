@@ -9,10 +9,6 @@ on:
         required: false
         default: false
 
-  push:
-    branches:
-      - master
-
 permissions:
   id-token: write
   contents: read
@@ -38,7 +34,7 @@ jobs:
 
   deploy-staging:
     needs: [ci, ci-skipped]
-    if: always() && ${{ needs.ci.result == 'success' || needs.ci-skipped.result == 'success' }}
+    if: always() && (needs.ci.result == 'success' || needs.ci-skipped.result == 'success')
     runs-on: ubuntu-latest
     steps:
       - run: echo "Deploy staging staging"
