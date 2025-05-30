@@ -28,15 +28,23 @@ jobs:
     steps:
       - run: echo "Check images"
 
+  test:
+    needs: check-docker-images-existence
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Print ${{ needs.check-docker-images-existence.result }}"
+
   deploy:
     if: always()
     needs: check-docker-images-existence
     runs-on: ubuntu-latest
     steps:
       - run: |
-          echo "Starting  $needs"
-          echo "Starting  $needs.check-docker-images-existence"
-          echo "Starting ${{ needs.check-docker-images-existence }}"
+          echo "Starting ${{ needs.check-docker-images-existence.result }}"
+          echo "Starting deploy staging..."
+          sleep 25  # give you time to cancel manually
+          echo "Finished deploy"
 
   # deploy:
   #   needs: check-docker-images-existence
@@ -44,6 +52,3 @@ jobs:
   #   runs-on: ubuntu-latest
   #   steps:
   #     - run: |
-  #         echo "Starting deploy staging..."
-  #         sleep 25  # give you time to cancel manually
-  #         echo "Finished deploy"
