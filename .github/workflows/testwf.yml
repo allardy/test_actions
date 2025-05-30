@@ -9,6 +9,10 @@ on:
         required: false
         default: false
 
+    push:
+      branches:
+        - master
+
 permissions:
   id-token: write
   contents: read
@@ -47,7 +51,7 @@ jobs:
       - run: echo "Check staging"
 
   cancel-stack:
-    if: cancelled()
+    if: always() && cancelled()
     runs-on: ubuntu-latest
     steps:
       - run: echo "Cancelling stack"
