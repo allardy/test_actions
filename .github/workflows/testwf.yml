@@ -44,7 +44,7 @@ jobs:
     steps:
       - run: |
           echo "Starting deploy staging..."
-          sleep 300  # give you time to cancel manually
+          sleep 35  # give you time to cancel manually
           echo "Finished deploy"
 
   check-staging:
